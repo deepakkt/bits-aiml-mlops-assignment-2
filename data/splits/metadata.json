@@ -1,0 +1,44 @@
+{
+  "class_to_index": {
+    "cat": 0,
+    "dog": 1
+  },
+  "counts": {
+    "test": 2502,
+    "train": 19998,
+    "val": 2498
+  },
+  "counts_by_class": {
+    "test": {
+      "cat": 1251,
+      "dog": 1251
+    },
+    "train": {
+      "cat": 9999,
+      "dog": 9999
+    },
+    "val": {
+      "cat": 1249,
+      "dog": 1249
+    }
+  },
+  "data_source": {
+    "path": "data/raw/PetImages",
+    "type": "filesystem"
+  },
+  "dataset_root": "data/raw/PetImages",
+  "label_inference": "Label inferred from any path segment named cat/cats or dog/dogs (case-insensitive).",
+  "manifest_format": "path\\tlabel (repo-relative path)",
+  "ratios": {
+    "test": 0.1,
+    "train": 0.8,
+    "val": 0.1
+  },
+  "raw_dir": "data/raw",
+  "seed": 1337,
+  "supported_suffixes": [
+    ".jpeg",
+    ".jpg",
+    ".png"
+  ]
+}

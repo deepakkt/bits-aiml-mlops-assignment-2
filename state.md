@@ -2,7 +2,7 @@
 
 ## Completed Parts
 - [x] Part 1 — Repo bootstrap + dev environment + scaffolding
-- [ ] Part 2 — Dataset acquisition + split manifests + preprocessing utilities + 1 unit test
+- [x] Part 2 — Dataset acquisition + split manifests + preprocessing utilities + 1 unit test
 - [ ] Part 3 — Baseline model training + evaluation + MLflow logging + save `model.pkl`
 - [ ] Part 4 — Inference core + FastAPI service + 1 unit test
 - [ ] Part 5 — Docker packaging (local run) + smoke-test script
@@ -17,10 +17,16 @@
 - Deterministic split seed (to be used in Part 2): **1337**
 - Image preprocessing target: 224×224 RGB
 - Dataset zip present: `data/cats-and-dogs-classification-dataset.zip` (do not delete)
+- Extracted dataset root (expected): `data/raw/PetImages`
+- Split manifests: `data/splits/{train,val,test}.txt` with `path<TAB>label` (repo-relative path)
+- Split metadata: `data/splits/metadata.json` with seed/ratios/counts/class mapping
 - Git-LFS rules: `data/raw/**`, `data/processed/**`, `data/*.zip`, `artifacts/model/*.pkl`
 
-## Pinned Dependencies (Part 1)
-- pytest==8.3.3 (test runner; minimal scaffold)
+## Pinned Dependencies (Part 2)
+- pytest==8.3.3 (test runner)
+- numpy==1.26.4 (array handling for preprocessing)
+- pillow==10.4.0 (image loading/preprocessing)
+- kaggle==1.6.17 (Kaggle CLI for dataset download)
 
 ## Container/Image Conventions
 - Docker image name: `docker.io/<dockerhub_username>/cats-dogs-classifier`
@@ -40,13 +46,14 @@
 - Prefer ServiceMonitor via kube-prometheus-stack
 - Scrape `/metrics` on the FastAPI service
 
-## How To Verify (Part 1)
+## How To Verify (Part 2)
 ```bash
-./scripts/dev/create_venv.sh
+./scripts/dev/download_dataset.sh
+./scripts/dev/generate_splits.sh
 ./scripts/dev/run_tests.sh
 ```
 
 ## Next Part Notes
-- Implement Kaggle download script and deterministic split manifests.
-- Add preprocessing utility (224×224 RGB) and a unit test using a dummy image.
-- Update README/state with dataset handling and split metadata.
+- Implement training/evaluation with MLflow logging.
+- Save `artifacts/model/model.pkl` with class mapping + preprocessing metadata.
+- Add training/evaluation instructions to README and update state.
