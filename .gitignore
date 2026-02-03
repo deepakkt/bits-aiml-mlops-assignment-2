@@ -11,6 +11,9 @@ cats-and-dogs-classification-dataset.zip
 .env
 .env.*
 
+# MLflow
+mlruns/
+
 # OS
 .DS_Store
 

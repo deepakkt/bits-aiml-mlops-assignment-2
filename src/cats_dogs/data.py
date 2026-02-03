@@ -228,6 +228,30 @@ def write_split_manifests(
     return metadata
 
 
+def load_split_manifest(manifest_path: Path) -> list[tuple[Path, str]]:
+    """Load a split manifest and return absolute paths with labels."""
+    repo_root = _resolve_repo_root()
+    manifest_path_abs = _resolve_path(manifest_path, repo_root)
+
+    if not manifest_path_abs.exists():
+        raise FileNotFoundError(f"Manifest not found: {manifest_path_abs}")
+
+    items: list[tuple[Path, str]] = []
+    for line in manifest_path_abs.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\t")
+        if len(parts) != 2:
+            raise ValueError(f"Invalid manifest line (expected path<TAB>label): {line}")
+        rel_path, label = parts
+        if label not in CLASS_TO_INDEX:
+            raise ValueError(f"Unexpected label '{label}' in manifest {manifest_path_abs}")
+        abs_path = _resolve_path(Path(rel_path), repo_root)
+        items.append((abs_path, label))
+
+    return items
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate deterministic split manifests.")
     parser.add_argument("--raw-dir", default="data/raw", help="Directory with extracted dataset.")

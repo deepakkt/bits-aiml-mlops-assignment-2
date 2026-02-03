@@ -3,7 +3,7 @@
 ## Completed Parts
 - [x] Part 1 — Repo bootstrap + dev environment + scaffolding
 - [x] Part 2 — Dataset acquisition + split manifests + preprocessing utilities + 1 unit test
-- [ ] Part 3 — Baseline model training + evaluation + MLflow logging + save `model.pkl`
+- [x] Part 3 — Baseline model training + evaluation + MLflow logging + save `model.pkl`
 - [ ] Part 4 — Inference core + FastAPI service + 1 unit test
 - [ ] Part 5 — Docker packaging (local run) + smoke-test script
 - [ ] Part 6 — GitHub Actions CI (tests + build) + push to Docker Hub on main
@@ -22,11 +22,21 @@
 - Split metadata: `data/splits/metadata.json` with seed/ratios/counts/class mapping
 - Git-LFS rules: `data/raw/**`, `data/processed/**`, `data/*.zip`, `artifacts/model/*.pkl`
 
-## Pinned Dependencies (Part 2)
+## Pinned Dependencies (Part 3)
 - pytest==8.3.3 (test runner)
 - numpy==1.26.4 (array handling for preprocessing)
 - pillow==10.4.0 (image loading/preprocessing)
 - kaggle==1.6.17 (Kaggle CLI for dataset download)
+- scikit-learn==1.5.2 (baseline classifier + metrics)
+- matplotlib==3.8.4 (training curve + confusion matrices)
+- mlflow==2.12.1 (experiment tracking)
+
+## Model/Training Conventions (Part 3)
+- Baseline features: normalized RGB color histograms (8 bins per channel, 24-dim)
+- Model: `SGDClassifier(loss="log_loss")` with deterministic seed
+- Augmentation (train-only): random horizontal flip, +/- 15 deg rotation, brightness/contrast jitter
+- MLflow tracking: local `mlruns/` by default (override with `--mlflow-uri`)
+- Model bundle: `ModelBundle` pickle at `artifacts/model/model.pkl` with preprocessing + feature config metadata
 
 ## Container/Image Conventions
 - Docker image name: `docker.io/<dockerhub_username>/cats-dogs-classifier`
@@ -46,14 +56,16 @@
 - Prefer ServiceMonitor via kube-prometheus-stack
 - Scrape `/metrics` on the FastAPI service
 
-## How To Verify (Part 2)
+## How To Verify (Part 3)
 ```bash
 ./scripts/dev/download_dataset.sh
 ./scripts/dev/generate_splits.sh
 ./scripts/dev/run_tests.sh
+PYTHONPATH=src python -m cats_dogs.train
 ```
 
 ## Next Part Notes
-- Implement training/evaluation with MLflow logging.
-- Save `artifacts/model/model.pkl` with class mapping + preprocessing metadata.
-- Add training/evaluation instructions to README and update state.
+- Implement inference core (`src/cats_dogs/predict.py`) that loads `ModelBundle`.
+- Add FastAPI service with `/health`, `/predict`, `/metrics`.
+- Add unit test for inference logic (load model + 2-class probabilities).
+- When importing MLflow in scripts, pre-filter warnings for protobuf service deprecation and pkg_resources deprecation to keep CLI output clean.
