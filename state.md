@@ -5,7 +5,7 @@
 - [x] Part 2 — Dataset acquisition + split manifests + preprocessing utilities + 1 unit test
 - [x] Part 3 — Baseline model training + evaluation + MLflow logging + save `model.pkl`
 - [x] Part 4 — Inference core + FastAPI service + 1 unit test
-- [ ] Part 5 — Docker packaging (local run) + smoke-test script
+- [x] Part 5 — Docker packaging (local run) + smoke-test script
 - [ ] Part 6 — GitHub Actions CI (tests + build) + push to Docker Hub on main
 - [ ] Part 7 — Kubernetes manifests + Minikube deploy + gated post-deploy smoke test
 - [ ] Part 8 — Provisioning scripts: Minikube + Argo CD + GitOps app + Argo-gated smoke test
@@ -50,6 +50,10 @@
 ## Container/Image Conventions
 - Docker image name: `docker.io/<dockerhub_username>/cats-dogs-classifier`
 - Tag format: `:<git_sha>` (and optionally `:latest` on main)
+- Local default `DOCKERHUB_USERNAME`: `local`
+- Local default `IMAGE_TAG`: `local`
+- Local container name: `cats-dogs-api`
+- Local host port: `8000`
 
 ## Kubernetes Conventions (planned)
 - Namespace: `cats-dogs`
@@ -82,7 +86,13 @@ curl -F "file=@data/raw/PetImages/Cat/0.jpg" http://localhost:8000/predict
 curl http://localhost:8000/metrics
 ```
 
+## How To Verify (Part 5)
+```bash
+./scripts/dev/run_docker.sh
+./scripts/dev/smoke_test_local.sh
+```
+
 ## Next Part Notes
-- Add Dockerfile to package FastAPI service and `model.pkl`.
-- Create local docker run + smoke-test scripts (idempotent).
-- Ensure container exposes port 8000 and health/predict endpoints.
+- Add GitHub Actions CI to run tests and build the image on PR/push.
+- Add main-branch job to push Docker image to Docker Hub with SHA tag.
+- Document required secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.

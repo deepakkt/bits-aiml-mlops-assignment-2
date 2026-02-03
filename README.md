@@ -90,3 +90,25 @@ curl http://localhost:8000/metrics
 ```
 
 Set `MODEL_PATH` if the model lives somewhere else (default is `artifacts/model/model.pkl`).
+
+## Docker (Part 5)
+
+Build and run the API container locally:
+
+```bash
+./scripts/dev/run_docker.sh
+```
+
+Run the smoke test (health + predict):
+
+```bash
+./scripts/dev/smoke_test_local.sh
+```
+
+Optional environment variables:
+
+- `DOCKERHUB_USERNAME` (default: `local`)
+- `IMAGE_TAG` (default: `local`)
+- `CONTAINER_NAME` (default: `cats-dogs-api`)
+- `HOST_PORT` (default: `8000`)
+- `API_URL` (default: `http://localhost:8000` for smoke tests)
