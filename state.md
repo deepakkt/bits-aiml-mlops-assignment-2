@@ -4,7 +4,7 @@
 - [x] Part 1 — Repo bootstrap + dev environment + scaffolding
 - [x] Part 2 — Dataset acquisition + split manifests + preprocessing utilities + 1 unit test
 - [x] Part 3 — Baseline model training + evaluation + MLflow logging + save `model.pkl`
-- [ ] Part 4 — Inference core + FastAPI service + 1 unit test
+- [x] Part 4 — Inference core + FastAPI service + 1 unit test
 - [ ] Part 5 — Docker packaging (local run) + smoke-test script
 - [ ] Part 6 — GitHub Actions CI (tests + build) + push to Docker Hub on main
 - [ ] Part 7 — Kubernetes manifests + Minikube deploy + gated post-deploy smoke test
@@ -22,7 +22,7 @@
 - Split metadata: `data/splits/metadata.json` with seed/ratios/counts/class mapping
 - Git-LFS rules: `data/raw/**`, `data/processed/**`, `data/*.zip`, `artifacts/model/*.pkl`
 
-## Pinned Dependencies (Part 3)
+## Pinned Dependencies (Part 4)
 - pytest==8.3.3 (test runner)
 - numpy==1.26.4 (array handling for preprocessing)
 - pillow==10.4.0 (image loading/preprocessing)
@@ -30,6 +30,10 @@
 - scikit-learn==1.5.2 (baseline classifier + metrics)
 - matplotlib==3.8.4 (training curve + confusion matrices)
 - mlflow==2.12.1 (experiment tracking)
+- fastapi==0.115.5 (inference API)
+- uvicorn==0.30.6 (ASGI server)
+- prometheus-client==0.20.0 (metrics export)
+- python-multipart==0.0.9 (multipart uploads)
 
 ## Model/Training Conventions (Part 3)
 - Baseline features: normalized RGB color histograms (8 bins per channel, 24-dim)
@@ -37,6 +41,11 @@
 - Augmentation (train-only): random horizontal flip, +/- 15 deg rotation, brightness/contrast jitter
 - MLflow tracking: local `mlruns/` by default (override with `--mlflow-uri`)
 - Model bundle: `ModelBundle` pickle at `artifacts/model/model.pkl` with preprocessing + feature config metadata
+
+## Inference Service (Part 4)
+- FastAPI app: `app/main.py`
+- Model path env var: `MODEL_PATH` (default `artifacts/model/model.pkl`)
+- Endpoints: `/health`, `/predict`, `/metrics`
 
 ## Container/Image Conventions
 - Docker image name: `docker.io/<dockerhub_username>/cats-dogs-classifier`
@@ -64,8 +73,16 @@
 PYTHONPATH=src python -m cats_dogs.train
 ```
 
+## How To Verify (Part 4)
+```bash
+./scripts/dev/run_tests.sh
+PYTHONPATH=src uvicorn app.main:app --host 0.0.0.0 --port 8000
+curl http://localhost:8000/health
+curl -F "file=@data/raw/PetImages/Cat/0.jpg" http://localhost:8000/predict
+curl http://localhost:8000/metrics
+```
+
 ## Next Part Notes
-- Implement inference core (`src/cats_dogs/predict.py`) that loads `ModelBundle`.
-- Add FastAPI service with `/health`, `/predict`, `/metrics`.
-- Add unit test for inference logic (load model + 2-class probabilities).
-- When importing MLflow in scripts, pre-filter warnings for protobuf service deprecation and pkg_resources deprecation to keep CLI output clean.
+- Add Dockerfile to package FastAPI service and `model.pkl`.
+- Create local docker run + smoke-test scripts (idempotent).
+- Ensure container exposes port 8000 and health/predict endpoints.
