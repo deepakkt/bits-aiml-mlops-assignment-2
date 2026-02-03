@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+.venv*/
+cats-and-dogs-classification-dataset.zip
+# Local env
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# Data (keep dirs via .gitkeep)
+data/raw/**
+!data/raw/.gitkeep
+data/processed/**
+!data/processed/.gitkeep
+
+# Generated artifacts (keep dirs via .gitkeep)
+artifacts/model/**
+!artifacts/model/.gitkeep
+artifacts/figures/**
+!artifacts/figures/.gitkeep
