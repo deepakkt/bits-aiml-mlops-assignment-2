@@ -112,3 +112,16 @@ Optional environment variables:
 - `CONTAINER_NAME` (default: `cats-dogs-api`)
 - `HOST_PORT` (default: `8000`)
 - `API_URL` (default: `http://localhost:8000` for smoke tests)
+
+## GitHub Actions CI (Part 6)
+
+On every push and pull request, CI installs dependencies, runs `pytest`, and builds the Docker image.
+
+On `main`, the workflow logs in to Docker Hub and pushes:
+
+`docker.io/<DOCKERHUB_USERNAME>/cats-dogs-classifier:<git_sha>`
+
+Required GitHub repository secrets:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`

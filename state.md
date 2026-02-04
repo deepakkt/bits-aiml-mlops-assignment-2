@@ -6,7 +6,7 @@
 - [x] Part 3 — Baseline model training + evaluation + MLflow logging + save `model.pkl`
 - [x] Part 4 — Inference core + FastAPI service + 1 unit test
 - [x] Part 5 — Docker packaging (local run) + smoke-test script
-- [ ] Part 6 — GitHub Actions CI (tests + build) + push to Docker Hub on main
+- [x] Part 6 — GitHub Actions CI (tests + build) + push to Docker Hub on main
 - [ ] Part 7 — Kubernetes manifests + Minikube deploy + gated post-deploy smoke test
 - [ ] Part 8 — Provisioning scripts: Minikube + Argo CD + GitOps app + Argo-gated smoke test
 - [ ] Part 9 — GitOps image update automation (CI → manifests → Argo sync)
@@ -55,6 +55,12 @@
 - Local container name: `cats-dogs-api`
 - Local host port: `8000`
 
+## CI/CD (Part 6)
+- Workflow: `.github/workflows/ci.yaml`
+- PR/push: install deps, run `pytest`, build Docker image
+- main: push `docker.io/<DOCKERHUB_USERNAME>/cats-dogs-classifier:<git_sha>`
+- Required GitHub secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
+
 ## Kubernetes Conventions (planned)
 - Namespace: `cats-dogs`
 - Service name: `cats-dogs-api`
@@ -92,7 +98,16 @@ curl http://localhost:8000/metrics
 ./scripts/dev/smoke_test_local.sh
 ```
 
+## How To Verify (Part 6)
+```bash
+git checkout -b ci-test
+git commit --allow-empty -m "ci test"
+git push origin ci-test
+# Open a PR from ci-test -> CI runs tests + docker build
+# Merge to main with secrets set -> image pushes to Docker Hub with tag = git SHA
+```
+
 ## Next Part Notes
-- Add GitHub Actions CI to run tests and build the image on PR/push.
-- Add main-branch job to push Docker image to Docker Hub with SHA tag.
-- Document required secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
+- Add Kubernetes manifests and Minikube deploy scripts.
+- Ensure deploy is gated by an in-cluster smoke-test Job.
+- Document port-forward and resource requests/limits in `state.md`.
