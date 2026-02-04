@@ -7,8 +7,8 @@
 - [x] Part 4 — Inference core + FastAPI service + 1 unit test
 - [x] Part 5 — Docker packaging (local run) + smoke-test script
 - [x] Part 6 — GitHub Actions CI (tests + build) + push to Docker Hub on main
-- [ ] Part 7 — Kubernetes manifests + Minikube deploy + gated post-deploy smoke test
-- [ ] Part 8 — Provisioning scripts: Minikube + Argo CD + GitOps app + Argo-gated smoke test
+- [x] Part 7 — Kubernetes manifests + Minikube deploy + gated post-deploy smoke test
+- [x] Part 8 — Provisioning scripts: Minikube + Argo CD + GitOps app + Argo-gated smoke test
 - [ ] Part 9 — GitOps image update automation (CI → manifests → Argo sync)
 - [ ] Part 10 — Observability + post-deploy performance tracking + submission-ready packaging
 
@@ -61,15 +61,29 @@
 - main: push `docker.io/<DOCKERHUB_USERNAME>/cats-dogs-classifier:<git_sha>`
 - Required GitHub secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
 
-## Kubernetes Conventions (planned)
+## Kubernetes Conventions (Part 7)
 - Namespace: `cats-dogs`
 - Service name: `cats-dogs-api`
 - Container/service port: `8000`
-- Port-forward (planned): `kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000`
+- Deployment: `cats-dogs-api`
+- Smoke test Job: `cats-dogs-smoke-test`
+- Resource requests/limits (container):
+  - requests: cpu `100m`, memory `256Mi`
+  - limits: cpu `500m`, memory `512Mi`
+- Port-forward: `kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000`
 
-## Argo CD Conventions (planned)
+## Argo CD Conventions (Part 8)
 - App name: `cats-dogs`
-- Sync method: manual trigger initially; auto-sync decision in Part 8/9
+- Namespace: `argocd`
+- Application manifest: `argocd/application.yaml`
+- Source path: `k8s/overlays/dev`
+- Repo URL (default): `https://github.com/deepakkt/bits-aiml-mlops-assignment-2.git` (update if forked)
+- Sync method: manual trigger initially; use `scripts/dev/argocd_sync_and_wait.sh`
+- Sync options: `CreateNamespace=true`
+- RBAC default role (local dev): `role:admin` (override with `ARGOCD_RBAC_DEFAULT_ROLE`)
+- Smoke test hook: Job `cats-dogs-smoke-test`
+  - Hook type: `PostSync`
+  - Delete policy: `HookSucceeded,HookFailed`
 
 ## Prometheus/Grafana Strategy (planned)
 - Prefer ServiceMonitor via kube-prometheus-stack
@@ -107,7 +121,35 @@ git push origin ci-test
 # Merge to main with secrets set -> image pushes to Docker Hub with tag = git SHA
 ```
 
+## How To Verify (Part 7)
+```bash
+minikube start
+
+# Build/load image into Minikube (choose one)
+eval $(minikube -p minikube docker-env)
+docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local .
+
+# Or: docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local . && minikube image load docker.io/local/cats-dogs-classifier:local
+
+./scripts/dev/deploy_minikube.sh
+
+kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000
+curl http://localhost:8000/health
+```
+
+## How To Verify (Part 8)
+```bash
+./scripts/provision/minikube_start.sh
+./scripts/provision/argocd_install.sh
+./scripts/provision/argocd_bootstrap_app.sh
+
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo
+argocd login localhost:8080 --username admin --password <password> --insecure
+
+./scripts/dev/argocd_sync_and_wait.sh
+```
+
 ## Next Part Notes
-- Add Kubernetes manifests and Minikube deploy scripts.
-- Ensure deploy is gated by an in-cluster smoke-test Job.
-- Document port-forward and resource requests/limits in `state.md`.
+- Add GitOps image update automation in CI (update kustomize tag on main).
+- Keep Argo CD hook gating and surface failure in sync logs/CLI.

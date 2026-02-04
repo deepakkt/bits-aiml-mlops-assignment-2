@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: docker.io/local/cats-dogs-classifier
+    newName: docker.io/local/cats-dogs-classifier
+    newTag: local
+
+patchesStrategicMerge:
+  - patch-env.yaml

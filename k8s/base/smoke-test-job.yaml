@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cats-dogs-smoke-test
+  labels:
+    app: cats-dogs-api
+    job: cats-dogs-smoke-test
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded,HookFailed
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: cats-dogs-api
+        job: cats-dogs-smoke-test
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: smoke-test
+          image: curlimages/curl:8.5.0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+
+              SERVICE_URL="http://cats-dogs-api:8000"
+              HEALTH_URL="${SERVICE_URL}/health"
+              PREDICT_URL="${SERVICE_URL}/predict"
+
+              echo "==> Waiting for /health"
+              for i in $(seq 1 20); do
+                if curl -fsS "$HEALTH_URL" -o /tmp/health.json; then
+                  if grep -Eq '"status"[[:space:]]*:[[:space:]]*"ok"' /tmp/health.json; then
+                    break
+                  fi
+                fi
+                echo "Health check attempt ${i}/20 failed; retrying..."
+                sleep 2
+                if [ "$i" -eq 20 ]; then
+                  echo "ERROR: /health did not return ok"
+                  cat /tmp/health.json || true
+                  exit 1
+                fi
+              done
+
+              cat > /tmp/smoke.ppm <<'PPM'
+              P3
+              1 1
+              255
+              255 0 0
+              PPM
+
+              echo "==> Calling /predict"
+              if ! curl -fsS -F "file=@/tmp/smoke.ppm;type=image/x-portable-pixmap" "$PREDICT_URL" -o /tmp/predict.json; then
+                echo "ERROR: /predict call failed"
+                exit 1
+              fi
+
+              if ! grep -Eq '"label"' /tmp/predict.json; then
+                echo "ERROR: predict response missing label"
+                cat /tmp/predict.json
+                exit 1
+              fi
+
+              if ! grep -Eq '"probability"' /tmp/predict.json; then
+                echo "ERROR: predict response missing probability"
+                cat /tmp/predict.json
+                exit 1
+              fi
+
+              echo "==> Smoke test passed"

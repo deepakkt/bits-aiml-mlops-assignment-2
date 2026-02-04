@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cats-dogs-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: cats-dogs-api
+          env:
+            - name: MODEL_PATH
+              value: /app/artifacts/model/model.pkl

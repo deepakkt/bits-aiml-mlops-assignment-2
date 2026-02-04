@@ -125,3 +125,97 @@ Required GitHub repository secrets:
 
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
+
+## Kubernetes on Minikube (Part 7)
+
+Build/load the image into Minikube (choose one):
+
+```bash
+# Option A: build directly in Minikube's Docker daemon
+eval $(minikube -p minikube docker-env)
+docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local .
+
+# Option B: build locally and load into Minikube
+docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local .
+minikube image load docker.io/local/cats-dogs-classifier:local
+```
+
+Deploy and run the gated in-cluster smoke test:
+
+```bash
+./scripts/dev/deploy_minikube.sh
+```
+
+Standalone smoke test (re-runnable):
+
+```bash
+./scripts/dev/smoke_test_k8s.sh
+```
+
+Port-forward for local access:
+
+```bash
+kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000
+curl http://localhost:8000/health
+```
+
+If you need to tweak image tags or env vars, edit `k8s/overlays/dev/kustomization.yaml`.
+
+## Argo CD + GitOps (Part 8)
+
+Provision Minikube and install Argo CD:
+
+```bash
+./scripts/provision/minikube_start.sh
+./scripts/provision/argocd_install.sh
+```
+
+`argocd_install.sh` sets RBAC defaults for local dev; override with `ARGOCD_RBAC_DEFAULT_ROLE` if needed.
+
+Register the Argo CD Application:
+
+```bash
+./scripts/provision/argocd_bootstrap_app.sh
+```
+
+If you forked the repo, update `argocd/application.yaml` with your repo URL before bootstrapping.
+
+Access the Argo CD UI and get the admin password:
+
+```bash
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo
+```
+
+Login with the CLI and sync:
+
+```bash
+argocd login localhost:8080 --username admin --password <password> --insecure
+./scripts/dev/argocd_sync_and_wait.sh
+```
+
+If the repo is private, add repo credentials in Argo CD before syncing.
+
+## Part 7 + 8 Combined Flow
+
+```bash
+./scripts/provision/minikube_start.sh
+
+# Build/load image into Minikube (choose one)
+eval $(minikube -p minikube docker-env)
+docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local .
+
+# Or: docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local . && minikube image load docker.io/local/cats-dogs-classifier:local
+
+./scripts/provision/argocd_install.sh
+./scripts/provision/argocd_bootstrap_app.sh
+
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo
+argocd login localhost:8080 --username admin --password <password> --insecure
+
+./scripts/dev/argocd_sync_and_wait.sh
+
+kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000
+curl http://localhost:8000/health
+```
