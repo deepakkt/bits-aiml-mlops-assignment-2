@@ -1,4 +1,6 @@
 # Python
+spec.md
+state.md
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -10,6 +12,7 @@ cats-and-dogs-classification-dataset.zip
 # Local env
 .env
 .env.*
+.idea
 
 # MLflow
 mlruns/
