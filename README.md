@@ -113,13 +113,15 @@ Optional environment variables:
 - `HOST_PORT` (default: `8000`)
 - `API_URL` (default: `http://localhost:8000` for smoke tests)
 
-## GitHub Actions CI (Part 6)
+## GitHub Actions CI (Part 6 + 9)
 
 On every push and pull request, CI installs dependencies, runs `pytest`, and builds the Docker image.
 
-On `main`, the workflow logs in to Docker Hub and pushes:
+On `main`, the workflow:
 
-`docker.io/<DOCKERHUB_USERNAME>/cats-dogs-classifier:<git_sha>`
+- pushes `docker.io/<DOCKERHUB_USERNAME>/cats-dogs-classifier:<git_sha>`
+- updates `k8s/overlays/dev/kustomization.yaml` to the same image SHA
+- commits the GitOps manifest update back to `main` using `github-actions[bot]` and `GITHUB_TOKEN`
 
 Required GitHub repository secrets:
 
@@ -161,7 +163,7 @@ curl http://localhost:8000/health
 
 If you need to tweak image tags or env vars, edit `k8s/overlays/dev/kustomization.yaml`.
 
-## Argo CD + GitOps (Part 8)
+## Argo CD + GitOps (Part 8 + 9)
 
 Provision Minikube and install Argo CD:
 
@@ -180,6 +182,8 @@ Register the Argo CD Application:
 
 If you forked the repo, update `argocd/application.yaml` with your repo URL before bootstrapping.
 
+The Application is configured with automated sync (`prune` + `selfHeal`), so new manifest commits from CI are deployed without manual intervention.
+
 Access the Argo CD UI and get the admin password:
 
 ```bash
@@ -187,7 +191,7 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo
 ```
 
-Login with the CLI and sync:
+Login with the CLI and validate deployment state:
 
 ```bash
 argocd login localhost:8080 --username admin --password <password> --insecure
@@ -196,16 +200,29 @@ argocd login localhost:8080 --username admin --password <password> --insecure
 
 If the repo is private, add repo credentials in Argo CD before syncing.
 
-## Part 7 + 8 Combined Flow
+`argocd_sync_and_wait.sh` exits non-zero on sync/health/hook failure and prints app status/history.
+
+## Deployment Failure Surfacing (Part 9)
+
+The smoke test Job remains a `PostSync` Argo hook. If it fails, Argo marks the sync as failed.
+
+Observe failure in Argo UI:
+
+- open app `cats-dogs`
+- check Sync Status / Operation State for failed hook details
+
+Observe failure via CLI:
+
+```bash
+argocd app get cats-dogs
+argocd app history cats-dogs
+./scripts/dev/argocd_sync_and_wait.sh
+```
+
+## Part 8 + 9 Combined Flow
 
 ```bash
 ./scripts/provision/minikube_start.sh
-
-# Build/load image into Minikube (choose one)
-eval $(minikube -p minikube docker-env)
-docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local .
-
-# Or: docker build -f docker/Dockerfile -t docker.io/local/cats-dogs-classifier:local . && minikube image load docker.io/local/cats-dogs-classifier:local
 
 ./scripts/provision/argocd_install.sh
 ./scripts/provision/argocd_bootstrap_app.sh
