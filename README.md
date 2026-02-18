@@ -1,5 +1,9 @@
 # Cats vs Dogs — MLOps Assignment 2
 
+## Architecture
+
+![](architecture.jpg)
+
 ## Quickstart
 
 1) Create a Python 3.11 virtual environment and install deps:
@@ -235,4 +239,119 @@ argocd login localhost:8080 --username admin --password <password> --insecure
 
 kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000
 curl http://localhost:8000/health
+```
+
+## Observability (Part 10)
+
+Install Prometheus + Grafana and apply scrape/dashboard manifests:
+
+```bash
+./scripts/provision/monitoring_install.sh
+```
+
+What this script does (idempotent):
+
+- installs/upgrades `kube-prometheus-stack` via Helm
+- applies `monitoring/servicemonitor-cats-dogs.yaml` to scrape `cats-dogs-api` `/metrics`
+- applies Grafana dashboard ConfigMap from `monitoring/grafana/dashboards/cats-dogs-api.json`
+
+Access Grafana:
+
+```bash
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+kubectl -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
+```
+
+- URL: `http://localhost:3000`
+- Username: `admin`
+- Password: output of the command above
+- Dashboard: `Cats vs Dogs API Monitoring`
+
+Optional Prometheus access:
+
+```bash
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-kube-prometheus-prometheus 9090:9090
+```
+
+## Post-deploy Evaluation (Part 10)
+
+Generate post-deploy performance evidence as CSV:
+
+```bash
+./scripts/dev/post_deploy_eval.sh
+```
+
+Default behavior:
+
+- reads `data/splits/test.txt`
+- sends a small balanced cat/dog batch to `POST /predict`
+- writes `artifacts/reports/post_deploy_eval_<timestamp>.csv` with per-sample rows + summary row
+
+Optional env vars:
+
+- `API_URL` (default `http://localhost:8000`)
+- `MANIFEST_PATH` (default `data/splits/test.txt`)
+- `SAMPLE_SIZE` (default `20`)
+- `REPORT_DIR` (default `artifacts/reports`)
+- `OUTPUT_CSV` (default auto-generated timestamped file)
+
+## Submission Package (Part 10)
+
+Create a submission zip with source, CI/CD, manifests, and model artifact:
+
+```bash
+./scripts/dev/make_submission_zip.sh
+```
+
+Default output path:
+
+- `artifacts/submission/cats-dogs-mlops-submission-<timestamp>.zip`
+
+The script fails fast if `artifacts/model/model.pkl` is missing.
+
+## <5 Minute Demo Script (recording checklist)
+
+1. Start services and deploy app:
+
+```bash
+./scripts/provision/minikube_start.sh
+./scripts/provision/argocd_install.sh
+./scripts/provision/argocd_bootstrap_app.sh
+./scripts/provision/monitoring_install.sh
+```
+
+2. Show Argo gating (PostSync smoke-test must pass):
+
+```bash
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode; echo
+argocd login localhost:8080 --username admin --password <password> --insecure
+./scripts/dev/argocd_sync_and_wait.sh
+```
+
+3. Generate live API traffic and post-deploy metrics artifact:
+
+```bash
+kubectl -n cats-dogs port-forward svc/cats-dogs-api 8000:8000
+./scripts/dev/post_deploy_eval.sh
+ls -1 artifacts/reports/post_deploy_eval_*.csv | tail -n 1
+```
+
+4. Show Grafana metrics:
+
+```bash
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
+kubectl -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
+```
+
+- Open `http://localhost:3000`
+- Login as `admin`
+- Open dashboard `Cats vs Dogs API Monitoring`
+- Point out request rate and latency panels moving after Step 3
+
+5. Build submission archive:
+
+```bash
+./scripts/dev/make_submission_zip.sh
+ls -lh artifacts/submission/*.zip | tail -n 1
 ```

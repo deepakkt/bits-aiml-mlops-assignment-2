@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cats-dogs-api
+  namespace: cats-dogs
+  labels:
+    app.kubernetes.io/name: cats-dogs-api
+spec:
+  namespaceSelector:
+    matchNames:
+      - cats-dogs
+  selector:
+    matchLabels:
+      app: cats-dogs-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
