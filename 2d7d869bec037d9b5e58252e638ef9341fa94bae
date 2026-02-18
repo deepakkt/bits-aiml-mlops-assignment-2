@@ -1,0 +1,37 @@
+README.md
+  800f6ae33d5b9aa2 3-4,6
+  e38a6a3008407a26 5,243-356
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "2d7d869bec037d9b5e58252e638ef9341fa94bae",
+  "prompts": {
+    "800f6ae33d5b9aa2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c7138-6e46-7801-9aac-017640e76d19",
+        "model": "unknown"
+      },
+      "human_author": "Deepak <deepak.kumaran@gmail.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    },
+    "e38a6a3008407a26": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019c7137-e687-7002-894e-d3fca1b4b179",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "Deepak <deepak.kumaran@gmail.com>",
+      "messages": [],
+      "total_additions": 116,
+      "total_deletions": 1,
+      "accepted_lines": 116,
+      "overriden_lines": 0
+    }
+  }
+}
