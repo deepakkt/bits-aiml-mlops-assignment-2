@@ -7,7 +7,7 @@ resources:
 images:
   - name: docker.io/local/cats-dogs-classifier
     newName: docker.io/deepakkt/cats-dogs-classifier
-    newTag: 33039d1e4ba82810be7c56b4e5d3bd7973d5a6ce
+    newTag: cac169e5946e0c935f3abc0258db4dd97435cf98
 
 patchesStrategicMerge:
   - patch-env.yaml
